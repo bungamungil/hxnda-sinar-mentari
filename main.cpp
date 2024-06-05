@@ -1,11 +1,12 @@
 #include <iomanip>
 #include <iostream>
 #include "Customer.h"
+#include "Product.h"
 using namespace std;
 
 void printHeader();
 string readUserInput(const string& prompt);
-int askUserToChooseMotorcycle();
+Product* askUserToChooseMotorcycle();
 void calculatePaymentTerms(
     double initialPrice,
     double* interest,
@@ -18,7 +19,16 @@ int askUserToChooseTenor();
 double askUserToInputDownPayment();
 void printPaymentSteps(Customer* customer, double debt, double paymentPerMonth);
 
+struct CurrencyFormatter: std::numpunct<char> {
+    char_type do_thousands_sep() const override { return '.'; }
+    char_type do_decimal_point() const override { return ','; }
+    string_type do_grouping() const override { return "\3"; }
+};
+
 int main() {
+    auto formatter = make_unique<CurrencyFormatter>();
+    cout.imbue(locale(cout.getloc(), formatter.release()));
+    cout << fixed << setprecision(2);
     printHeader();
     Customer customer(
             readUserInput("Nama   : "),
@@ -26,33 +36,17 @@ int main() {
             readUserInput("Email  : "),
             readUserInput("Telpon : ")
             );
-    int selectedMotorcycle = askUserToChooseMotorcycle();
+    Product* selectedProduct = askUserToChooseMotorcycle();
     double interest; // Besaran bunga yang akan dibebankan kepada kreditur (dalam Rupiah)
     double price; // Harga kotor motor setelah ditambahkan bunga (dalam Rupiah)
     double debt; // Sisa pembayaran yang akan dicicil oleh kreditur (dalam Rupiah)
     double paymentPerMonth; // Nominal yang akan dibayarkan per bulannya oleh kreditur (dalam Rupiah)
-    cout << fixed << setprecision(2);
-    switch (selectedMotorcycle) {
-        case 1:
-            calculatePaymentTerms(17700000.0, &interest, &price, &debt, &paymentPerMonth);
-            break;
-        case 2:
-            calculatePaymentTerms(20600000.0, &interest, &price, &debt, &paymentPerMonth);
-            break;
-        case 3:
-            calculatePaymentTerms(24800000.0, &interest, &price, &debt, &paymentPerMonth);
-            break;
-        case 4:
-            calculatePaymentTerms(24600000.0, &interest, &price, &debt, &paymentPerMonth);
-            break;
-        case 5:
-            calculatePaymentTerms(18750000.0, &interest, &price, &debt, &paymentPerMonth);
-            break;
-        default:
-            cout << "Terima kasih." << endl;
-            return 0;
+    if (selectedProduct != nullptr) {
+        calculatePaymentTerms(selectedProduct->getPrice(), &interest, &price, &debt, &paymentPerMonth);
+        printPaymentSteps(&customer, debt, paymentPerMonth);
+    } else {
+        cout << "Terima kasih." << endl;
     }
-    printPaymentSteps(&customer, debt, paymentPerMonth);
     return 0;
 }
 
@@ -73,18 +67,29 @@ string readUserInput(const string& prompt) {
     return input;
 }
 
-int askUserToChooseMotorcycle() {
+Product* askUserToChooseMotorcycle() {
+    vector<Product*> products;
+    products.push_back(new Product("Beat CBS", 17'700'000));
+    products.push_back(new Product("Scoopy", 20'600'000));
+    products.push_back(new Product("Vario 150", 24'800'000));
+    products.push_back(new Product("Supra GTR", 24'600'000));
+    products.push_back(new Product("Genio CBS PLUS", 18'750'000));
     cout << "Daftar Harga Motor :" << endl;
-    cout << "1. Beat CBS         Rp 17.700.000" << endl;
-    cout << "2. Scoopy           Rp 20.600.000" << endl;
-    cout << "3. Vario 150        Rp 24.800.000" << endl;
-    cout << "4. Supra GTR        Rp 24.600.000" << endl;
-    cout << "5. Genio CBS PLUS   Rp 18.750.000" << endl;
-    cout << "6. Tidak Memilih" << endl;
+    int productCount = 0;
+    for(const Product* product: products) {
+        productCount += 1;
+        cout << productCount << ". " << std::setfill(' ') << std::setw(24) << std::left << product->getName();
+        cout << "Rp " << product->getPrice() << endl;
+    }
+    productCount += 1;
+    cout << productCount << ". Tidak Memilih" << endl;
     cout << "Tipe motor yang Anda pilih : ";
     int selectedMotorcycle;
     cin >> selectedMotorcycle;
-    return selectedMotorcycle;
+    if (selectedMotorcycle > products.size()) {
+        return nullptr;
+    }
+    return products[selectedMotorcycle - 1];
 }
 
 void calculatePaymentTerms(

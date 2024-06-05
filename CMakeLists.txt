@@ -5,4 +5,6 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_executable(labs_kredit_motor main.cpp
         Customer.cpp
-        Customer.h)
+        Customer.h
+        Product.cpp
+        Product.h)
