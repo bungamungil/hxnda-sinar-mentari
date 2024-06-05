@@ -7,6 +7,7 @@
 
 
 #include "UserInterface.h"
+#include "CreditSimulationResult.h"
 
 class SimpleCommandLineInterface: public UserInterface {
 public:
@@ -15,16 +16,7 @@ public:
     Product* askCustomerToChooseProduct(vector<Product>* products) override;
     double askCustomerToInputDownPayment(Product* product) override;
     Tenor* askCustomerToChooseTenor(Product* product) override;
-    void showCreditSimulationResult(
-            Customer* customer,
-            Product* product,
-            Tenor* tenor,
-            double downPayment,
-            double interest,
-            double finalPrice,
-            double repaymentValue,
-            double paymentPerMonth
-    ) override;
+    void showCreditSimulationResult(CreditSimulationResult* result) override;
 private:
     static string readUserInput(const string& prompt);
 };

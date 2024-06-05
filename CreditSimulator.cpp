@@ -3,6 +3,7 @@
 //
 
 #include "CreditSimulator.h"
+#include "CreditSimulationResult.h"
 
 CreditSimulator::CreditSimulator(
     CustomerRepository* customerRepository,
@@ -16,6 +17,7 @@ CreditSimulator::CreditSimulator(
 
 void CreditSimulator::run() {
     this->userInterface->start();
+
     auto* customer = this->userInterface->askCustomerInformation();
     this->customerRepository->store(customer);
     auto* products = this->productRepository->fetch();
@@ -26,5 +28,7 @@ void CreditSimulator::run() {
     double finalPrice = selectedProduct->getPrice() + interest;
     double repaymentValue = finalPrice - downPayment;
     double paymentPerMonth = repaymentValue / selectedTenor->getMonth();
-    this->userInterface->showCreditSimulationResult(customer, selectedProduct, selectedTenor, downPayment, interest, finalPrice, repaymentValue, paymentPerMonth);
+    this->userInterface->showCreditSimulationResult(
+        new CreditSimulationResult(customer, selectedProduct, selectedTenor, downPayment, interest, finalPrice, repaymentValue, paymentPerMonth)
+    );
 }

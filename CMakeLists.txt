@@ -23,4 +23,6 @@ add_executable(labs_kredit_motor main.cpp
         UserInterface.h
         SimpleCommandLineInterface.cpp
         SimpleCommandLineInterface.h
+        CreditSimulationResult.cpp
+        CreditSimulationResult.h
 )

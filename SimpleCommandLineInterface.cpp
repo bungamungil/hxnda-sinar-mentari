@@ -84,28 +84,20 @@ Tenor *SimpleCommandLineInterface::askCustomerToChooseTenor(Product *product) {
     throw invalid_argument("Tenor " + to_string(selectedMonth) + " bulann tidak tersedia.");
 }
 
-void SimpleCommandLineInterface::showCreditSimulationResult(
-    Customer *customer,
-    Product *product,
-    Tenor *tenor,
-    double downPayment,
-    double interest,
-    double finalPrice,
-    double repaymentValue,
-    double paymentPerMonth
-) {
-    cout << "Harga motor menjadi Rp " << finalPrice << endl;
-    cout << "Dengan DP Rp " << downPayment << " maka cicilan perbulan = Rp " << paymentPerMonth << endl;
+void SimpleCommandLineInterface::showCreditSimulationResult(CreditSimulationResult* result) {
+    cout << "Harga motor menjadi Rp " << result->getFinalPrice() << endl;
+    cout << "Dengan DP Rp " << result->getDownPayment() << " maka cicilan perbulan = Rp " << result->getPaymentPerMonth() << endl;
     cout << "=================================================" << endl;
-    cout << "Saudara " << customer->getName() << ", berikut kami tampilkan rincian cicilan Anda :" << endl;
-    double debtRemaining = repaymentValue;
+    cout << "Saudara " << result->getCustomer()->getName() << ", berikut kami tampilkan rincian cicilan Anda :" << endl;
+    double debtRemaining = result->getRepaymentValue();
     int month = 0;
     while (debtRemaining > 0.1) {
-        debtRemaining = debtRemaining - paymentPerMonth;
+        debtRemaining = debtRemaining - result->getPaymentPerMonth();
         month += 1;
         cout << "Setelah cicilan ke-" << month << ", sisa pembayaran : Rp " << debtRemaining << endl;
     }
     cout << "Info lebih lanjut hubungi Rina (0859xxxxxxxx)" << endl;
+    delete result;
 }
 
 string SimpleCommandLineInterface::readUserInput(const string& prompt) {
