@@ -11,4 +11,6 @@ add_executable(labs_kredit_motor main.cpp
         Payment.cpp
         Payment.h
         Tenor.cpp
-        Tenor.h)
+        Tenor.h
+        CreditSimulator.cpp
+        CreditSimulator.h)
