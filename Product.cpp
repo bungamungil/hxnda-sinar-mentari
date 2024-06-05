@@ -4,7 +4,7 @@
 
 #include "Product.h"
 
-Product::Product(const std::string& productName, const double& price) {
+Product::Product(const string& productName, const double& price, const Payment& payment): payment(payment) {
     this->name = productName;
     this->price = price;
 }
@@ -15,4 +15,8 @@ const string& Product::getName() const {
 
 const double& Product::getPrice() const {
     return this->price;
+}
+
+const Payment& Product::getPayment() const {
+    return this->payment;
 }

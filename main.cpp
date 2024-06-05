@@ -6,17 +6,17 @@ using namespace std;
 
 void printHeader();
 string readUserInput(const string& prompt);
-Product* askUserToChooseMotorcycle();
+Product askUserToChooseMotorcycle();
 void calculatePaymentTerms(
-    double initialPrice,
+    Product* product,
     double* interest,
     double* finalPrice,
     double* debt,
     double* paymentPerMonth
 );
-int calculatePercentageInterest(int tenor);
-int askUserToChooseTenor();
-double askUserToInputDownPayment();
+
+Tenor askUserToChooseTenor(const Payment* payment);
+double askUserToInputDownPayment(double minimal);
 void printPaymentSteps(Customer* customer, double debt, double paymentPerMonth);
 
 struct CurrencyFormatter: std::numpunct<char> {
@@ -36,17 +36,13 @@ int main() {
             readUserInput("Email  : "),
             readUserInput("Telpon : ")
             );
-    Product* selectedProduct = askUserToChooseMotorcycle();
+    Product selectedProduct = askUserToChooseMotorcycle();
     double interest; // Besaran bunga yang akan dibebankan kepada kreditur (dalam Rupiah)
     double price; // Harga kotor motor setelah ditambahkan bunga (dalam Rupiah)
     double debt; // Sisa pembayaran yang akan dicicil oleh kreditur (dalam Rupiah)
     double paymentPerMonth; // Nominal yang akan dibayarkan per bulannya oleh kreditur (dalam Rupiah)
-    if (selectedProduct != nullptr) {
-        calculatePaymentTerms(selectedProduct->getPrice(), &interest, &price, &debt, &paymentPerMonth);
-        printPaymentSteps(&customer, debt, paymentPerMonth);
-    } else {
-        cout << "Terima kasih." << endl;
-    }
+    calculatePaymentTerms(&selectedProduct, &interest, &price, &debt, &paymentPerMonth);
+    printPaymentSteps(&customer, debt, paymentPerMonth);
     return 0;
 }
 
@@ -67,19 +63,31 @@ string readUserInput(const string& prompt) {
     return input;
 }
 
-Product* askUserToChooseMotorcycle() {
-    vector<Product*> products;
-    products.push_back(new Product("Beat CBS", 17'700'000));
-    products.push_back(new Product("Scoopy", 20'600'000));
-    products.push_back(new Product("Vario 150", 24'800'000));
-    products.push_back(new Product("Supra GTR", 24'600'000));
-    products.push_back(new Product("Genio CBS PLUS", 18'750'000));
+Product askUserToChooseMotorcycle() {
+    double defaultDownPayment = 500'000;
+    auto defaultTenors = vector<Tenor>();
+    defaultTenors.push_back(Tenor(12, 10));
+    defaultTenors.push_back(Tenor(24, 20));
+    defaultTenors.push_back(Tenor(36, 30));
+    auto defaultPayment = Payment(defaultDownPayment, defaultTenors);
+    double promoDownPayment = 250'000;
+    auto promoTenors = vector<Tenor>();
+    promoTenors.push_back(Tenor(12, 5));
+    promoTenors.push_back(Tenor(24, 15));
+    promoTenors.push_back(Tenor(36, 25));
+    auto promoPayment = Payment(promoDownPayment, promoTenors);
+    vector<Product> products;
+    products.push_back(Product("Beat CBS", 17'700'000, defaultPayment));
+    products.push_back(Product("Scoopy", 20'600'000, defaultPayment));
+    products.push_back(Product("Vario 150", 24'800'000, promoPayment));
+    products.push_back(Product("Supra GTR", 24'600'000, defaultPayment));
+    products.push_back(Product("Genio CBS PLUS", 18'750'000, defaultPayment));
     cout << "Daftar Harga Motor :" << endl;
     int productCount = 0;
-    for(const Product* product: products) {
+    for(const Product product: products) {
         productCount += 1;
-        cout << productCount << ". " << std::setfill(' ') << std::setw(24) << std::left << product->getName();
-        cout << "Rp " << product->getPrice() << endl;
+        cout << productCount << ". " << std::setfill(' ') << std::setw(24) << std::left << product.getName();
+        cout << "Rp " << product.getPrice() << endl;
     }
     productCount += 1;
     cout << productCount << ". Tidak Memilih" << endl;
@@ -87,59 +95,52 @@ Product* askUserToChooseMotorcycle() {
     int selectedMotorcycle;
     cin >> selectedMotorcycle;
     if (selectedMotorcycle > products.size()) {
-        return nullptr;
+        throw invalid_argument("Product yang Anda pilih tidak tersedia. Terima kasih.");
     }
     return products[selectedMotorcycle - 1];
 }
 
 void calculatePaymentTerms(
-    double initialPrice,
+    Product* product,
     double* interest,
     double* finalPrice,
     double* debt,
     double* paymentPerMonth
 ) {
-    int tenor = askUserToChooseTenor();
-    double downPayment = askUserToInputDownPayment();
-    int percentageInterest = calculatePercentageInterest(tenor);
-    *interest = initialPrice * percentageInterest / 100;
+    double initialPrice = product->getPrice();
+    Tenor tenor = askUserToChooseTenor(&product->getPayment());
+    double downPayment = askUserToInputDownPayment(product->getPayment().getMinimumDownPayment());
+    *interest = initialPrice * tenor.getPercentageInterest() / 100;
     *finalPrice = initialPrice + *interest;
     *debt = *finalPrice - downPayment;
-    *paymentPerMonth = *debt / tenor;
-    cout << "Harga motor menjadi " << *finalPrice << endl;
-    cout << "Dengan DP " << downPayment << " maka cicilan perbulan = " << *paymentPerMonth << endl;
+    *paymentPerMonth = *debt / tenor.getMonth();
+    cout << "Harga motor menjadi Rp " << *finalPrice << endl;
+    cout << "Dengan DP Rp " << downPayment << " maka cicilan perbulan = Rp " << *paymentPerMonth << endl;
 }
 
-int calculatePercentageInterest(int tenor) {
-    if (tenor == 12) {
-        return 10;
+Tenor askUserToChooseTenor(const Payment* payment) {
+    cout << "Pilihan lama kredit yaitu :" << endl;
+    for(Tenor tenor: payment->getTenors()) {
+        cout << " - " << tenor.getMonth() << " bulan (bunga " << tenor.getPercentageInterest() << "%)" << endl;
     }
-    if (tenor == 24) {
-        return 20;
-    }
-    if (tenor == 36) {
-        return 30;
-    }
-    throw invalid_argument("Tenor " + to_string(tenor) + " tidak tersedia.");
-}
-
-int askUserToChooseTenor() {
-    cout << "Pilihan lama kredit yaitu : 12 bulan (bunga 10%)" << endl;
-    cout << "                            24 bulan (bunga 20%)" << endl;
-    cout << "                            36 bulan (bunga 30%)" << endl;
     cout << "Masukkan lama kredit yang Anda pilih : ";
-    int tenor;
-    cin >> tenor;
-    return tenor;
+    int selectedMonth;
+    cin >> selectedMonth;
+    for(Tenor tenor: payment->getTenors()) {
+        if (tenor.getMonth() == selectedMonth) {
+            return tenor;
+        }
+    }
+    throw invalid_argument("Tenor " + to_string(selectedMonth) + " bulann tidak tersedia.");
 }
 
-double askUserToInputDownPayment() {
+double askUserToInputDownPayment(double minimal) {
     float downPayment;
     cout << "======================================================" << endl;
-    cout << "Masukkan DP yang Anda inginkan (minimal Rp 500.000) : ";
+    cout << "Masukkan DP yang Anda inginkan (minimal Rp " << minimal << ") : ";
     cin >> downPayment;
     cout << "======================================================" << endl;
-    if (downPayment < 500000) {
+    if (downPayment < minimal) {
         throw invalid_argument("Down payment " + to_string(downPayment) + " tidak tersedia.");
     }
     return downPayment;
@@ -153,7 +154,7 @@ void printPaymentSteps(Customer* customer, double debt, double paymentPerMonth) 
     while (debtRemaining > 0.1) {
         debtRemaining = debtRemaining - paymentPerMonth;
         month += 1;
-        cout << "Setelah cicilan ke-" << month << ", sisa pembayaran : " << debtRemaining << endl;
+        cout << "Setelah cicilan ke-" << month << ", sisa pembayaran : Rp " << debtRemaining << endl;
     }
     cout << "Info lebih lanjut hubungi Rina (0859xxxxxxxx)" << endl;
 }

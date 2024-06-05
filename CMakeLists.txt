@@ -7,4 +7,8 @@ add_executable(labs_kredit_motor main.cpp
         Customer.cpp
         Customer.h
         Product.cpp
-        Product.h)
+        Product.h
+        Payment.cpp
+        Payment.h
+        Tenor.cpp
+        Tenor.h)
