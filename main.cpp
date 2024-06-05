@@ -1,5 +1,6 @@
 #include <iomanip>
 #include <iostream>
+#include "Customer.h"
 using namespace std;
 
 void printHeader();
@@ -15,12 +16,16 @@ void calculatePaymentTerms(
 int calculatePercentageInterest(int tenor);
 int askUserToChooseTenor();
 double askUserToInputDownPayment();
-void printPaymentSteps(const string& name, double debt, double paymentPerMonth);
+void printPaymentSteps(Customer* customer, double debt, double paymentPerMonth);
 
 int main() {
     printHeader();
-    string name = readUserInput("Nama   : ");
-    string address = readUserInput("Alamat : ");
+    Customer customer(
+            readUserInput("Nama   : "),
+            readUserInput("Alamat : "),
+            readUserInput("Email  : "),
+            readUserInput("Telpon : ")
+            );
     int selectedMotorcycle = askUserToChooseMotorcycle();
     double interest; // Besaran bunga yang akan dibebankan kepada kreditur (dalam Rupiah)
     double price; // Harga kotor motor setelah ditambahkan bunga (dalam Rupiah)
@@ -47,7 +52,7 @@ int main() {
             cout << "Terima kasih." << endl;
             return 0;
     }
-    printPaymentSteps(name, debt, paymentPerMonth);
+    printPaymentSteps(&customer, debt, paymentPerMonth);
     return 0;
 }
 
@@ -135,9 +140,9 @@ double askUserToInputDownPayment() {
     return downPayment;
 }
 
-void printPaymentSteps(const string& name, double debt, double paymentPerMonth) {
+void printPaymentSteps(Customer* customer, double debt, double paymentPerMonth) {
     cout << "=================================================" << endl;
-    cout << "Saudara " << name << ", berikut kami tampilkan rincian cicilan Anda :" << endl;
+    cout << "Saudara " << customer->getName() << ", berikut kami tampilkan rincian cicilan Anda :" << endl;
     double debtRemaining = debt;
     int month = 0;
     while (debtRemaining > 0.1) {
