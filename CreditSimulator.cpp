@@ -13,24 +13,31 @@ struct CurrencyFormatter: std::numpunct<char> {
     string_type do_grouping() const override { return "\3"; }
 };
 
+CreditSimulator::CreditSimulator(CustomerRepository* customerRepository, ProductRepository* productRepository) {
+    this->customerRepository = customerRepository;
+    this->productRepository = productRepository;
+}
+
 void CreditSimulator::run() {
     auto formatter = make_unique<CurrencyFormatter>();
     cout.imbue(locale(cout.getloc(), formatter.release()));
     cout << fixed << setprecision(2);
     printHeader();
-    Customer customer(
+    auto* customer = new Customer(
             readUserInput("Nama   : "),
             readUserInput("Alamat : "),
             readUserInput("Email  : "),
             readUserInput("Telpon : ")
     );
-    Product selectedProduct = askUserToChooseMotorcycle();
+    this->customerRepository->store(customer);
+    Product* selectedProduct = askUserToChooseMotorcycle(this->productRepository->fetch());
     double interest; // Besaran bunga yang akan dibebankan kepada kreditur (dalam Rupiah)
     double price; // Harga kotor motor setelah ditambahkan bunga (dalam Rupiah)
     double debt; // Sisa pembayaran yang akan dicicil oleh kreditur (dalam Rupiah)
     double paymentPerMonth; // Nominal yang akan dibayarkan per bulannya oleh kreditur (dalam Rupiah)
-    calculatePaymentTerms(&selectedProduct, &interest, &price, &debt, &paymentPerMonth);
-    printPaymentSteps(&customer, debt, paymentPerMonth);
+    calculatePaymentTerms(selectedProduct, &interest, &price, &debt, &paymentPerMonth);
+    printPaymentSteps(customer, debt, paymentPerMonth);
+    delete customer;
 }
 
 void CreditSimulator::printHeader() {
@@ -49,28 +56,10 @@ string CreditSimulator::readUserInput(const string& prompt) {
     return input;
 }
 
-Product CreditSimulator::askUserToChooseMotorcycle() {
-    double defaultDownPayment = 500'000;
-    auto defaultTenors = vector<Tenor>();
-    defaultTenors.push_back(Tenor(12, 10));
-    defaultTenors.push_back(Tenor(24, 20));
-    defaultTenors.push_back(Tenor(36, 30));
-    auto defaultPayment = Payment(defaultDownPayment, defaultTenors);
-    double promoDownPayment = 250'000;
-    auto promoTenors = vector<Tenor>();
-    promoTenors.push_back(Tenor(12, 5));
-    promoTenors.push_back(Tenor(24, 15));
-    promoTenors.push_back(Tenor(36, 25));
-    auto promoPayment = Payment(promoDownPayment, promoTenors);
-    vector<Product> products;
-    products.push_back(Product("Beat CBS", 17'700'000, defaultPayment));
-    products.push_back(Product("Scoopy", 20'600'000, defaultPayment));
-    products.push_back(Product("Vario 150", 24'800'000, promoPayment));
-    products.push_back(Product("Supra GTR", 24'600'000, defaultPayment));
-    products.push_back(Product("Genio CBS PLUS", 18'750'000, defaultPayment));
+Product* CreditSimulator::askUserToChooseMotorcycle(vector<Product>* products) {
     cout << "Daftar Harga Motor :" << endl;
     int productCount = 0;
-    for(const Product product: products) {
+    for(const Product product: *products) {
         productCount += 1;
         cout << productCount << ". " << std::setfill(' ') << std::setw(24) << std::left << product.getName();
         cout << "Rp " << product.getPrice() << endl;
@@ -80,10 +69,10 @@ Product CreditSimulator::askUserToChooseMotorcycle() {
     cout << "Tipe motor yang Anda pilih : ";
     int selectedMotorcycle;
     cin >> selectedMotorcycle;
-    if (selectedMotorcycle > products.size()) {
+    if (selectedMotorcycle > products->size()) {
         throw invalid_argument("Product yang Anda pilih tidak tersedia. Terima kasih.");
     }
-    return products[selectedMotorcycle - 1];
+    return &products->at(selectedMotorcycle - 1);
 }
 
 void CreditSimulator::calculatePaymentTerms(

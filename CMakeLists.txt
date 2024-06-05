@@ -13,4 +13,11 @@ add_executable(labs_kredit_motor main.cpp
         Tenor.cpp
         Tenor.h
         CreditSimulator.cpp
-        CreditSimulator.h)
+        CreditSimulator.h
+        CustomerRepository.h
+        ProductRepository.h
+        DemoCustomerRepository.cpp
+        DemoCustomerRepository.h
+        DemoProductRepository.cpp
+        DemoProductRepository.h
+)
