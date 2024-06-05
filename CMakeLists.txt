@@ -20,4 +20,7 @@ add_executable(labs_kredit_motor main.cpp
         DemoCustomerRepository.h
         DemoProductRepository.cpp
         DemoProductRepository.h
+        UserInterface.h
+        SimpleCommandLineInterface.cpp
+        SimpleCommandLineInterface.h
 )
